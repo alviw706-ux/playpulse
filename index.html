@@ -55,6 +55,16 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
 .lb-columns span:nth-child(3),.lb-columns span:nth-child(4){text-align:right}
 .lb-empty,.lb-note{font-size:11px;color:var(--muted);line-height:1.5}
 .lb-note{margin-top:9px}
+.profile{margin-top:14px;padding:14px;background:linear-gradient(135deg,#61f4e812,#ff5eaa0b);border:1px solid #61f4e833;border-radius:17px}
+.profile-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.profile-title{font-size:14px;font-weight:950;letter-spacing:.08em;color:var(--cyan)}
+.profile-status{font-size:10px;color:var(--muted)}
+.profile-name{font-size:20px;font-weight:950;margin-bottom:12px;overflow-wrap:anywhere}
+.profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.profile-stat{padding:10px 6px;text-align:center;background:#ffffff0b;border:1px solid #ffffff14;border-radius:11px}
+.profile-stat small{display:block;color:var(--muted);font-size:9px;letter-spacing:.08em;font-weight:800}
+.profile-stat strong{display:block;color:var(--cyan);font-size:20px;margin-top:3px;font-variant-numeric:tabular-nums}
+.profile-note{margin-top:10px;color:var(--muted);font-size:11px;line-height:1.5}
 .footer{text-align:center;color:#7783a8;font-size:10px;letter-spacing:.12em;margin-top:14px}
 @media(max-width:360px){.lb-row,.lb-columns{grid-template-columns:25px minmax(60px,1fr) 48px 58px;gap:4px;padding-left:5px;padding-right:5px}.lb-row{font-size:11px}}
 @media(min-width:600px){body{padding:10px 18px}.gamewrap{border-radius:26px}}
@@ -97,6 +107,17 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
     <div class="lb-note">Play a run, enter your name, and submit your score. Rankings show each player's total games and personal best.</div>
   </section>
 
+  <section class="profile" aria-label="My player profile">
+    <div class="profile-head"><div class="profile-title">👤 MY PLAYER PROFILE</div><div class="profile-status" id="profileStatus">Loading…</div></div>
+    <div class="profile-name" id="profileName">Guest Player</div>
+    <div class="profile-grid">
+      <div class="profile-stat"><small>GLOBAL RANK</small><strong id="profileRank">—</strong></div>
+      <div class="profile-stat"><small>TOTAL GAMES</small><strong id="profileGames">0</strong></div>
+      <div class="profile-stat"><small>PERSONAL BEST</small><strong id="profileBest">0</strong></div>
+    </div>
+    <div class="profile-note" id="profileNote">Submit your first score to build your player profile.</div>
+  </section>
+
   <div class="controls">
     <button class="iconbtn" id="pauseBtn">Ⅱ PAUSE</button>
     <button class="iconbtn" id="howBtn">? HOW TO PLAY</button>
@@ -131,8 +152,22 @@ async function connectLeaderboard(){
  }catch(error){
   console.error('Leaderboard connection error:',error);
   $('lbStatus').textContent='CONNECTION ISSUE';
+  $('profileStatus').textContent='OFFLINE';
+  $('profileNote').textContent='Could not load your profile. Refresh the page and try again.';
   $('leaderboardList').innerHTML='<div class="lb-empty">Could not connect. Refresh the page and try again.</div>';
  }
+}
+
+function showPlayerProfile(item){
+ const savedName=localStorage.getItem('neondash-player-name')||'Guest Player';
+ $('profileName').textContent=item?.player_name||savedName;
+ $('profileRank').textContent=item?.player_rank?'#'+item.player_rank:'—';
+ $('profileGames').textContent=item?.total_games??'0';
+ $('profileBest').textContent=item?.personal_best??'0';
+ $('profileStatus').textContent=item?'PLAYER FOUND':'NEW PLAYER';
+ $('profileNote').textContent=item
+  ? 'Your stats are linked to this browser session. Play more runs and submit scores to update your profile.'
+  : 'Play a game and submit your first score to create your player profile.';
 }
 
 /* Read the aggregated player rankings from the Supabase view */
@@ -143,6 +178,16 @@ async function loadLeaderboard(){
    .order('player_rank',{ascending:true})
    .limit(10);
   if(error)throw error;
+  if(currentUserId){
+   const {data:myStats,error:profileError}=await supabaseClient.from('leaderboard_stats')
+    .select('player_rank,user_id,player_name,total_games,personal_best')
+    .eq('user_id',currentUserId)
+    .maybeSingle();
+   if(profileError)throw profileError;
+   showPlayerProfile(myStats);
+  }else{
+   showPlayerProfile(null);
+  }
   const list=$('leaderboardList');
   list.replaceChildren();
   if(!data||data.length===0){
@@ -189,6 +234,7 @@ $('submitScoreBtn').addEventListener('click',async()=>{
   });
   if(error)throw error;
   localStorage.setItem('neondash-player-name',name);
+  $('profileName').textContent=name;
   $('lbStatus').textContent='SCORE SAVED';
   alert('Your score was submitted to the global leaderboard!');
   await loadLeaderboard();
