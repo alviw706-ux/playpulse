@@ -59,7 +59,7 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
 .profile-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
 .profile-title{font-size:14px;font-weight:950;letter-spacing:.08em;color:var(--cyan)}
 .profile-status{font-size:10px;color:var(--muted)}
-.profile-name{font-size:20px;font-weight:950;margin-bottom:12px;overflow-wrap:anywhere}
+.profile-identity{display:flex;align-items:center;gap:12px;margin-bottom:12px}.profile-avatar{width:58px;height:58px;display:grid;place-items:center;flex:0 0 58px;border-radius:16px;background:#61f4e81a;border:1px solid #61f4e855;font-size:32px;box-shadow:0 0 20px #61f4e822}.profile-name{font-size:20px;font-weight:950;overflow-wrap:anywhere}.avatar-label{font-size:10px;color:var(--muted);font-weight:900;letter-spacing:.12em;margin:12px 0 7px}.avatar-picker{display:flex;flex-wrap:wrap;gap:7px}.avatar-choice{width:39px;height:39px;border-radius:11px;border:1px solid #ffffff22;background:#ffffff0b;color:white;font-size:21px;cursor:pointer}.avatar-choice.active{border:2px solid var(--cyan);background:#61f4e822;box-shadow:0 0 14px #61f4e844}.save-profile{width:100%;margin-top:10px;border:0;border-radius:10px;padding:10px;background:var(--cyan);color:#07131c;font-weight:950;cursor:pointer}
 .profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .profile-stat{padding:10px 6px;text-align:center;background:#ffffff0b;border:1px solid #ffffff14;border-radius:11px}
 .profile-stat small{display:block;color:var(--muted);font-size:9px;letter-spacing:.08em;font-weight:800}
@@ -109,7 +109,19 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
 
   <section class="profile" aria-label="My player profile">
     <div class="profile-head"><div class="profile-title">👤 MY PLAYER PROFILE</div><div class="profile-status" id="profileStatus">Loading…</div></div>
-    <div class="profile-name" id="profileName">Guest Player</div>
+    <div class="profile-identity"><div class="profile-avatar" id="profileAvatar">🚀</div><div class="profile-name" id="profileName">Guest Player</div></div>
+    <div class="avatar-label">CHOOSE YOUR AVATAR</div>
+    <div class="avatar-picker" id="avatarPicker" aria-label="Choose your player avatar">
+      <button class="avatar-choice" type="button" data-avatar="🚀" aria-label="Rocket avatar">🚀</button>
+      <button class="avatar-choice" type="button" data-avatar="🦊" aria-label="Fox avatar">🦊</button>
+      <button class="avatar-choice" type="button" data-avatar="🐉" aria-label="Dragon avatar">🐉</button>
+      <button class="avatar-choice" type="button" data-avatar="🤖" aria-label="Robot avatar">🤖</button>
+      <button class="avatar-choice" type="button" data-avatar="👾" aria-label="Alien avatar">👾</button>
+      <button class="avatar-choice" type="button" data-avatar="⚡" aria-label="Lightning avatar">⚡</button>
+      <button class="avatar-choice" type="button" data-avatar="🐼" aria-label="Panda avatar">🐼</button>
+      <button class="avatar-choice" type="button" data-avatar="🦁" aria-label="Lion avatar">🦁</button>
+    </div>
+    <button class="save-profile" id="saveProfileBtn" type="button">SAVE MY PROFILE</button>
     <div class="profile-grid">
       <div class="profile-stat"><small>GLOBAL RANK</small><strong id="profileRank">—</strong></div>
       <div class="profile-stat"><small>TOTAL GAMES</small><strong id="profileGames">0</strong></div>
@@ -160,6 +172,7 @@ async function connectLeaderboard(){
 
 function showPlayerProfile(item){
  const savedName=localStorage.getItem('neondash-player-name')||'Guest Player';
+ $('profileAvatar').textContent=localStorage.getItem('neondash-player-avatar')||'🚀';
  $('profileName').textContent=item?.player_name||savedName;
  $('profileRank').textContent=item?.player_rank?'#'+item.player_rank:'—';
  $('profileGames').textContent=item?.total_games??'0';
@@ -246,6 +259,30 @@ $('submitScoreBtn').addEventListener('click',async()=>{
  }
 });
 $('playerName').value=localStorage.getItem('neondash-player-name')||'';
+let selectedAvatar=localStorage.getItem('neondash-player-avatar')||'🚀';
+function refreshAvatarPicker(){
+ $('profileAvatar').textContent=selectedAvatar;
+ document.querySelectorAll('.avatar-choice').forEach(button=>{
+  const active=button.dataset.avatar===selectedAvatar;
+  button.classList.toggle('active',active);
+  button.setAttribute('aria-pressed',active?'true':'false');
+ });
+}
+document.querySelectorAll('.avatar-choice').forEach(button=>{
+ button.addEventListener('click',()=>{selectedAvatar=button.dataset.avatar;refreshAvatarPicker();});
+});
+$('saveProfileBtn').addEventListener('click',()=>{
+ const name=$('playerName').value.trim();
+ if(!name){alert('Please enter your player name in the box above first.');$('playerName').focus();return}
+ if(name.length>16){alert('Name must be 16 characters or less.');return}
+ localStorage.setItem('neondash-player-name',name);
+ localStorage.setItem('neondash-player-avatar',selectedAvatar);
+ $('profileName').textContent=name;
+ $('profileAvatar').textContent=selectedAvatar;
+ $('profileStatus').textContent='PROFILE SAVED';
+ $('profileNote').textContent='Your name and avatar are saved on this browser. Submit a score to update your global rankings.';
+});
+refreshAvatarPicker();
 connectLeaderboard();
 
 /* NEON DASH game */
