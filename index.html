@@ -11,7 +11,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% 0%,#1b2450 0%,var(--bg) 55%);color:#f7f8ff;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 body{display:flex;justify-content:center;align-items:center;padding:16px;overflow-x:hidden}
-button{font:inherit}
+button,input{font:inherit}
 .app{width:min(100%,430px);margin:auto}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .brand{font-size:clamp(23px,6vw,32px);font-weight:1000;letter-spacing:.09em;text-shadow:0 0 18px #61f4e866}
@@ -35,29 +35,26 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
 .hint{text-align:center;color:var(--muted);font-size:12px;margin:12px 0 0}
 .controls{display:flex;justify-content:space-between;gap:10px;margin-top:12px}
 .controls button{flex:1}
+.leaderboard{margin-top:14px;padding:14px;background:#ffffff0b;border:1px solid #ffffff18;border-radius:17px}
+.lb-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.lb-title{font-size:14px;font-weight:950;letter-spacing:.08em;color:var(--cyan)}
+.lb-status{font-size:10px;color:var(--muted);text-align:right}
+.lb-form{display:flex;gap:7px;margin:10px 0}
+.lb-form input{min-width:0;flex:1;border:1px solid #ffffff24;border-radius:10px;padding:10px;background:#080d20;color:white;outline:none}
+.lb-form input:focus{border-color:var(--cyan)}
+.lb-form button{border:0;border-radius:10px;padding:9px 11px;background:var(--cyan);color:#07131c;font-weight:900;cursor:pointer}
+.lb-form button:disabled{opacity:.55;cursor:wait}
+.lb-list{display:grid;gap:6px}
+.lb-row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:9px;background:#ffffff08;font-size:13px}
+.lb-rank{color:var(--yellow);font-weight:900}
+.lb-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-weight:900;color:var(--cyan);font-variant-numeric:tabular-nums}
+.lb-empty,.lb-note{font-size:11px;color:var(--muted);line-height:1.5}
+.lb-note{margin-top:9px}
 .footer{text-align:center;color:#7783a8;font-size:10px;letter-spacing:.12em;margin-top:14px}
 @media(min-width:600px){body{padding:10px 18px}.gamewrap{border-radius:26px}}
-/* Compact desktop layout: keep the complete game and controls visible with less scrolling. */
-@media (min-width:700px) and (min-height:760px){
-  .app{width:min(100%,410px)}
-  .top{margin-bottom:9px}
-  .hud{gap:7px;margin-bottom:8px}
-  .stat{padding:7px}
-  .stat strong{font-size:19px}
-  .controls{margin-top:8px}
-  .hint{margin-top:7px}
-  .footer{margin-top:8px}
-}
-@media (max-height:760px){
-  body{padding-top:6px;padding-bottom:6px}
-  .app{width:min(100%,390px)}
-  .top{margin-bottom:7px}
-  .hud{margin-bottom:7px}
-  .stat{padding:6px}
-  .controls{margin-top:7px}
-  .hint{margin-top:6px}
-  .footer{margin-top:6px}
-}
+@media(min-width:700px) and (min-height:760px){.app{width:min(100%,410px)}.top{margin-bottom:9px}.hud{gap:7px;margin-bottom:8px}.stat{padding:7px}.stat strong{font-size:19px}.controls{margin-top:8px}.hint{margin-top:7px}.footer{margin-top:8px}}
+@media(max-height:760px){body{padding-top:6px;padding-bottom:6px}.app{width:min(100%,390px)}.top{margin-bottom:7px}.hud{margin-bottom:7px}.stat{padding:6px}.controls{margin-top:7px}.hint{margin-top:6px}.footer{margin-top:6px}}
 </style>
 </head>
 <body>
@@ -83,6 +80,17 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
       </div>
     </div>
   </section>
+
+  <section class="leaderboard">
+    <div class="lb-head"><div class="lb-title">🌍 GLOBAL LEADERBOARD</div><div class="lb-status" id="lbStatus">Connecting…</div></div>
+    <div class="lb-form">
+      <input id="playerName" maxlength="16" placeholder="Your player name" autocomplete="nickname">
+      <button id="submitScoreBtn">SUBMIT SCORE</button>
+    </div>
+    <div class="lb-list" id="leaderboardList"><div class="lb-empty">Loading top players…</div></div>
+    <div class="lb-note">Play a run, enter your name, and submit your score. Your score will appear on the global board.</div>
+  </section>
+
   <div class="controls">
     <button class="iconbtn" id="pauseBtn">Ⅱ PAUSE</button>
     <button class="iconbtn" id="howBtn">? HOW TO PLAY</button>
@@ -90,11 +98,98 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
   <p class="hint">TAP / CLICK / PRESS SPACE TO SWITCH LANES</p>
   <div class="footer">ORIGINAL MINI GAME · MADE FOR QUICK REPLAYS</div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=>{
 'use strict';
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+
+/* Supabase public project settings */
+const SUPABASE_URL='https://mdooihdfejjnacxlbzpw.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_swKbKvi_2jPogciDhTkS0A_XWk5wVi-';
 const $=id=>document.getElementById(id);
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+let currentUserId=null;
+
+async function connectLeaderboard(){
+ try{
+  let {data:{session}}=await supabaseClient.auth.getSession();
+  if(!session){
+   const {data,error}=await supabaseClient.auth.signInAnonymously();
+   if(error)throw error;
+   session={user:data.user};
+  }
+  currentUserId=session.user.id;
+  $('lbStatus').textContent='ONLINE';
+  await loadLeaderboard();
+ }catch(error){
+  console.error('Leaderboard connection error:',error);
+  $('lbStatus').textContent='CONNECTION ISSUE';
+  $('leaderboardList').innerHTML='<div class="lb-empty">Could not connect. Refresh the page and try again.</div>';
+ }
+}
+async function loadLeaderboard(){
+ try{
+  const {data,error}=await supabaseClient.from('leaderboard')
+   .select('player_name,score')
+   .order('score',{ascending:false})
+   .order('created_at',{ascending:true})
+   .limit(10);
+  if(error)throw error;
+  const list=$('leaderboardList');
+  list.replaceChildren();
+  if(!data||data.length===0){
+   list.innerHTML='<div class="lb-empty">No scores yet. Be the first player!</div>';
+   return;
+  }
+  data.forEach((item,index)=>{
+   const row=document.createElement('div');row.className='lb-row';
+   const rank=document.createElement('span');rank.className='lb-rank';rank.textContent='#'+(index+1);
+   const name=document.createElement('span');name.className='lb-name';name.textContent=item.player_name;
+   const points=document.createElement('span');points.className='lb-score';points.textContent=item.score;
+   row.append(rank,name,points);list.appendChild(row);
+  });
+ }catch(error){
+  console.error('Leaderboard load error:',error);
+  $('leaderboardList').innerHTML='<div class="lb-empty">Could not load scores. Please refresh.</div>';
+ }
+}
+$('submitScoreBtn').addEventListener('click',async()=>{
+ const name=$('playerName').value.trim();
+ const currentScore=score;
+ if(!name){alert('Please enter your player name first.');$('playerName').focus();return}
+ if(name.length>16){alert('Name must be 16 characters or less.');return}
+ if(currentScore<=0){alert('Play a game first and earn a score before submitting.');return}
+ const button=$('submitScoreBtn');
+ button.disabled=true;button.textContent='SAVING…';
+ try{
+  if(!currentUserId){
+   const {data,error}=await supabaseClient.auth.signInAnonymously();
+   if(error)throw error;
+   currentUserId=data.user.id;
+  }
+  const {error}=await supabaseClient.from('leaderboard').insert({
+   player_name:name,
+   score:currentScore,
+   user_id:currentUserId
+  });
+  if(error)throw error;
+  localStorage.setItem('neondash-player-name',name);
+  $('lbStatus').textContent='SCORE SAVED';
+  alert('Your score was submitted to the global leaderboard!');
+  await loadLeaderboard();
+ }catch(error){
+  console.error('Score submit error:',error);
+  alert('Score could not be saved. Check your internet connection and Supabase settings, then refresh.');
+ }finally{
+  button.disabled=false;button.textContent='SUBMIT SCORE';
+ }
+});
+$('playerName').value=localStorage.getItem('neondash-player-name')||'';
+connectLeaderboard();
+
+/* NEON DASH game */
+const canvas=$('game'),ctx=canvas.getContext('2d');
 const W=480,H=650,lanes=[155,325];
 let state='ready',score=0,best=Number(localStorage.getItem('neondash-best')||0),streak=0,lane=0;
 let playerY=520,objects=[],particles=[],spawn=0,speed=210,last=0,elapsed=0,shake=0,sound=true,audio=null;
@@ -102,7 +197,14 @@ $('best').textContent=best;
 const rand=(a,b)=>a+Math.random()*(b-a);
 function tone(freq=440,dur=.07,type='sine',vol=.035){
  if(!sound)return;
- try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}catch(e){}
+ try{
+  audio=audio||new (window.AudioContext||window.webkitAudioContext)();
+  let o=audio.createOscillator(),g=audio.createGain();
+  o.type=type;o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,audio.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);
+  o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur);
+ }catch(e){}
 }
 function updateHUD(){$('score').textContent=score;$('best').textContent=best;$('streak').textContent=streak+'×'}
 function reset(){score=0;streak=0;lane=0;objects=[];particles=[];spawn=.5;speed=210;elapsed=0;shake=0;playerY=520;updateHUD()}
@@ -110,8 +212,7 @@ function start(){reset();state='playing';$('overlay').classList.add('hidden');$(
 function switchLane(){if(state!=='playing')return;lane=1-lane;tone(320+lane*150,.055,'triangle',.025);burst(lanes[lane],playerY,'#61f4e8',5)}
 function burst(x,y,color,n=10){for(let i=0;i<n;i++)particles.push({x,y,vx:rand(-140,140),vy:rand(-170,100),life:rand(.25,.6),max:.6,color,r:rand(2,4)})}
 function spawnObject(){
- const obstacle=Math.random()<.68;
- const l=Math.random()<.5?0:1;
+ const obstacle=Math.random()<.68,l=Math.random()<.5?0:1;
  objects.push({x:lanes[l],y:-35,lane:l,type:obstacle?'block':'spark',size:obstacle?rand(25,34):13,passed:false,phase:rand(0,6.28)});
 }
 function gameOver(){
@@ -123,15 +224,25 @@ function gameOver(){
  $('overlayText').textContent=`You scored ${score}. ${score>=best&&score>0?'New personal best!':'Can you beat your best of '+best+'?'} One more run?`;
  $('startBtn').textContent='PLAY AGAIN';$('overlay').classList.remove('hidden');
 }
-function pause(){if(state==='playing'){state='paused';$('overlayEyebrow').textContent='TAKE A BREATHER';$('overlayTitle').textContent='PAUSED';$('overlayText').textContent='Your run is waiting. Jump back in when you are ready.';$('startBtn').textContent='RESUME';$('overlay').classList.remove('hidden');$('pauseBtn').textContent='▶ RESUME'}else if(state==='paused'){state='playing';$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ PAUSE';last=performance.now()}}
+function pause(){
+ if(state==='playing'){
+  state='paused';$('overlayEyebrow').textContent='TAKE A BREATHER';$('overlayTitle').textContent='PAUSED';
+  $('overlayText').textContent='Your run is waiting. Jump back in when you are ready.';
+  $('startBtn').textContent='RESUME';$('overlay').classList.remove('hidden');$('pauseBtn').textContent='▶ RESUME';
+ }else if(state==='paused'){
+  state='playing';$('overlay').classList.add('hidden');$('pauseBtn').textContent='Ⅱ PAUSE';last=performance.now();
+ }
+}
 function drawBackground(t){
  ctx.fillStyle='#090d20';ctx.fillRect(0,0,W,H);
- let g=ctx.createRadialGradient(240,120,10,240,260,440);g.addColorStop(0,'#18244a');g.addColorStop(1,'#090d20');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ let g=ctx.createRadialGradient(240,120,10,240,260,440);
+ g.addColorStop(0,'#18244a');g.addColorStop(1,'#090d20');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
  ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle='#61f4e8';ctx.lineWidth=1;
  for(let y=(t*.05)%44;y<H;y+=44){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
- for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}ctx.restore();
+ for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}
+ ctx.restore();
  ctx.setLineDash([8,13]);ctx.strokeStyle='#8ca0d333';ctx.lineWidth=2;
- for(const x of [240]){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}ctx.setLineDash([]);
+ ctx.beginPath();ctx.moveTo(240,0);ctx.lineTo(240,H);ctx.stroke();ctx.setLineDash([]);
  for(let i=0;i<2;i++){ctx.fillStyle='#61f4e80c';ctx.fillRect(lanes[i]-45,0,90,H)}
 }
 function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
@@ -140,17 +251,35 @@ function drawPlayer(t){
  ctx.save();ctx.translate(x,playerY);ctx.scale(pulse,1/pulse);
  ctx.shadowBlur=28;ctx.shadowColor='#61f4e8';ctx.fillStyle='#61f4e8';
  rounded(-15,-15,30,30,10);ctx.fill();
- ctx.shadowBlur=0;ctx.fillStyle='#0a2030';rounded(-7,-5,5,5,2);ctx.fill();rounded(3,-5,5,5,2);ctx.fill();
+ ctx.shadowBlur=0;ctx.fillStyle='#0a2030';
+ rounded(-7,-5,5,5,2);ctx.fill();rounded(3,-5,5,5,2);ctx.fill();
  ctx.strokeStyle='#d9fff8';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,3,6,.15,Math.PI-.15);ctx.stroke();
  ctx.restore();
 }
 function drawObjects(t){
- for(const o of objects){ctx.save();ctx.translate(o.x,o.y);
- if(o.type==='block'){ctx.rotate(Math.sin(t*.003+o.phase)*.08);ctx.shadowBlur=22;ctx.shadowColor='#ff5eaa';ctx.fillStyle='#ff5eaa';rounded(-o.size/2,-o.size/2,o.size,o.size,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#ffd2e7';ctx.lineWidth=2;rounded(-o.size/2+5,-o.size/2+5,o.size-10,o.size-10,4);ctx.stroke()}
- else{ctx.rotate(t*.003);ctx.shadowBlur=25;ctx.shadowColor='#ffe66d';ctx.fillStyle='#ffe66d';ctx.beginPath();for(let i=0;i<10;i++){let a=-Math.PI/2+i*Math.PI/5,r=i%2?6:13;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill()}
- ctx.restore()}
+ for(const o of objects){
+  ctx.save();ctx.translate(o.x,o.y);
+  if(o.type==='block'){
+   ctx.rotate(Math.sin(t*.003+o.phase)*.08);ctx.shadowBlur=22;ctx.shadowColor='#ff5eaa';ctx.fillStyle='#ff5eaa';
+   rounded(-o.size/2,-o.size/2,o.size,o.size,7);ctx.fill();
+   ctx.shadowBlur=0;ctx.strokeStyle='#ffd2e7';ctx.lineWidth=2;
+   rounded(-o.size/2+5,-o.size/2+5,o.size-10,o.size-10,4);ctx.stroke();
+  }else{
+   ctx.rotate(t*.003);ctx.shadowBlur=25;ctx.shadowColor='#ffe66d';ctx.fillStyle='#ffe66d';ctx.beginPath();
+   for(let i=0;i<10;i++){let a=-Math.PI/2+i*Math.PI/5,r=i%2?6:13;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}
+   ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+ }
 }
-function drawParticles(dt){for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;p.life-=dt;if(p.life<=0){particles.splice(i,1);continue}ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1}
+function drawParticles(dt){
+ for(let i=particles.length-1;i>=0;i--){
+  let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;p.life-=dt;
+  if(p.life<=0){particles.splice(i,1);continue}
+  ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+ }
+ ctx.globalAlpha=1;
+}
 function update(dt,t){
  if(state!=='playing')return;
  elapsed+=dt;speed=210+Math.min(260,elapsed*5.2);spawn-=dt;
@@ -160,9 +289,14 @@ function update(dt,t){
   if(!o.passed&&o.y>playerY+28){
    o.passed=true;
    if(o.type==='block'&&o.lane===lane){gameOver();return}
-   if(o.type==='block'&&o.lane!==lane){streak++;score+=1+(streak>=5?1:0);if(streak>=3){burst(lanes[lane],playerY,'#61f4e8',3);tone(680,.05)}}
+   if(o.type==='block'&&o.lane!==lane){
+    streak++;score+=1+(streak>=5?1:0);
+    if(streak>=3){burst(lanes[lane],playerY,'#61f4e8',3);tone(680,.05)}
+   }
   }
-  if(o.type==='spark'&&o.lane===lane&&Math.abs(o.y-playerY)<24){score+=3;streak++;burst(o.x,o.y,'#ffe66d',12);tone(800,.1,'sine');objects.splice(i,1);continue}
+  if(o.type==='spark'&&o.lane===lane&&Math.abs(o.y-playerY)<24){
+   score+=3;streak++;burst(o.x,o.y,'#ffe66d',12);tone(800,.1,'sine');objects.splice(i,1);continue;
+  }
   if(o.y>H+50)objects.splice(i,1);
  }
  for(let p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=240*dt;p.life-=dt}
@@ -172,9 +306,9 @@ function update(dt,t){
 function render(t){
  const dt=Math.min(.035,(t-last)/1000||0);last=t;
  if(state==='playing')update(dt,t);
- ctx.save();if(shake>0){ctx.translate(rand(-shake,shake),rand(-shake,shake));shake*=.88}
- drawBackground(t);drawObjects(t);drawPlayer(t);drawParticles(dt);
- ctx.restore();
+ ctx.save();
+ if(shake>0){ctx.translate(rand(-shake,shake),rand(-shake,shake));shake*=.88}
+ drawBackground(t);drawObjects(t);drawPlayer(t);drawParticles(dt);ctx.restore();
  if(state==='playing'){ctx.fillStyle='#9aa6c8';ctx.font='800 11px system-ui';ctx.textAlign='center';ctx.fillText('SURVIVE THE PULSE',240,32)}
  requestAnimationFrame(render);
 }
@@ -188,9 +322,21 @@ $('startBtn').addEventListener('click',()=>{if(state==='paused')pause();else sta
 $('pauseBtn').addEventListener('click',pause);
 $('soundBtn').addEventListener('click',()=>{sound=!sound;$('soundBtn').textContent=sound?'🔊 SOUND':'🔇 MUTED';if(sound)tone(550,.08)});
 $('shareBtn').addEventListener('click',share);
-$('howBtn').addEventListener('click',()=>{$('overlayEyebrow').textContent='HOW TO PLAY';$('overlayTitle').textContent='SWITCH. DODGE. SCORE.';$('overlayText').textContent='Tap, click, or press Space to switch between the two lanes. Avoid pink pulse blocks. Collect yellow sparks for bonus points. Survive longer to make the pulse faster.';$('startBtn').textContent=state==='playing'?'BACK TO GAME':'LET’S PLAY';$('overlay').classList.remove('hidden');if(state==='playing')state='paused';});
+$('howBtn').addEventListener('click',()=>{
+ $('overlayEyebrow').textContent='HOW TO PLAY';$('overlayTitle').textContent='SWITCH. DODGE. SCORE.';
+ $('overlayText').textContent='Tap, click, or press Space to switch between the two lanes. Avoid pink pulse blocks. Collect yellow sparks for bonus points. Survive longer to make the pulse faster.';
+ $('startBtn').textContent=state==='playing'?'BACK TO GAME':'LET’S PLAY';
+ $('overlay').classList.remove('hidden');if(state==='playing')state='paused';
+});
 canvas.addEventListener('pointerdown',e=>{e.preventDefault();if(state==='playing')switchLane()});
-window.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowLeft'||e.code==='ArrowRight'){e.preventDefault();if(state==='playing')switchLane();else if(state==='ready'||state==='over')start();else if(state==='paused')pause()}});
+window.addEventListener('keydown',e=>{
+ if(e.code==='Space'||e.code==='ArrowLeft'||e.code==='ArrowRight'){
+  e.preventDefault();
+  if(state==='playing')switchLane();
+  else if(state==='ready'||state==='over')start();
+  else if(state==='paused')pause();
+ }
+});
 $('overlayTitle').innerHTML='READY<br>TO DASH?';
 requestAnimationFrame(t=>{last=t;render(t)});
 })();
