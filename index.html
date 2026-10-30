@@ -44,14 +44,19 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
 .lb-form input:focus{border-color:var(--cyan)}
 .lb-form button{border:0;border-radius:10px;padding:9px 11px;background:var(--cyan);color:#07131c;font-weight:900;cursor:pointer}
 .lb-form button:disabled{opacity:.55;cursor:wait}
-.lb-list{display:grid;gap:6px}
-.lb-row{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:9px;background:#ffffff08;font-size:13px}
-.lb-rank{color:var(--yellow);font-weight:900}
-.lb-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.lb-score{font-weight:900;color:var(--cyan);font-variant-numeric:tabular-nums}
+.lb-list{display:grid;gap:7px}
+.lb-row{display:grid;grid-template-columns:30px minmax(70px,1fr) 54px 65px;gap:6px;align-items:center;padding:9px 8px;border-radius:9px;background:#ffffff08;font-size:12px}
+.lb-rank{color:var(--yellow);font-weight:950}
+.lb-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800}
+.lb-stat{text-align:right;font-variant-numeric:tabular-nums}
+.lb-stat small{display:block;color:var(--muted);font-size:9px;letter-spacing:.04em}
+.lb-stat strong{display:block;color:var(--cyan);font-size:13px}
+.lb-columns{display:grid;grid-template-columns:30px minmax(70px,1fr) 54px 65px;gap:6px;padding:0 8px 5px;color:var(--muted);font-size:9px;letter-spacing:.04em}
+.lb-columns span:nth-child(3),.lb-columns span:nth-child(4){text-align:right}
 .lb-empty,.lb-note{font-size:11px;color:var(--muted);line-height:1.5}
 .lb-note{margin-top:9px}
 .footer{text-align:center;color:#7783a8;font-size:10px;letter-spacing:.12em;margin-top:14px}
+@media(max-width:360px){.lb-row,.lb-columns{grid-template-columns:25px minmax(60px,1fr) 48px 58px;gap:4px;padding-left:5px;padding-right:5px}.lb-row{font-size:11px}}
 @media(min-width:600px){body{padding:10px 18px}.gamewrap{border-radius:26px}}
 @media(min-width:700px) and (min-height:760px){.app{width:min(100%,410px)}.top{margin-bottom:9px}.hud{gap:7px;margin-bottom:8px}.stat{padding:7px}.stat strong{font-size:19px}.controls{margin-top:8px}.hint{margin-top:7px}.footer{margin-top:8px}}
 @media(max-height:760px){body{padding-top:6px;padding-bottom:6px}.app{width:min(100%,390px)}.top{margin-bottom:7px}.hud{margin-bottom:7px}.stat{padding:6px}.controls{margin-top:7px}.hint{margin-top:6px}.footer{margin-top:6px}}
@@ -82,13 +87,14 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
   </section>
 
   <section class="leaderboard">
-    <div class="lb-head"><div class="lb-title">🌍 GLOBAL LEADERBOARD</div><div class="lb-status" id="lbStatus">Connecting…</div></div>
+    <div class="lb-head"><div class="lb-title">🏆 PLAYER RANKINGS</div><div class="lb-status" id="lbStatus">Connecting…</div></div>
     <div class="lb-form">
       <input id="playerName" maxlength="16" placeholder="Your player name" autocomplete="nickname">
       <button id="submitScoreBtn">SUBMIT SCORE</button>
     </div>
-    <div class="lb-list" id="leaderboardList"><div class="lb-empty">Loading top players…</div></div>
-    <div class="lb-note">Play a run, enter your name, and submit your score. Your score will appear on the global board.</div>
+    <div class="lb-columns"><span>RANK</span><span>PLAYER</span><span>GAMES</span><span>BEST</span></div>
+    <div class="lb-list" id="leaderboardList"><div class="lb-empty">Loading player rankings…</div></div>
+    <div class="lb-note">Play a run, enter your name, and submit your score. Rankings show each player's total games and personal best.</div>
   </section>
 
   <div class="controls">
@@ -128,30 +134,38 @@ async function connectLeaderboard(){
   $('leaderboardList').innerHTML='<div class="lb-empty">Could not connect. Refresh the page and try again.</div>';
  }
 }
+
+/* Read the aggregated player rankings from the Supabase view */
 async function loadLeaderboard(){
  try{
-  const {data,error}=await supabaseClient.from('leaderboard')
-   .select('player_name,score')
-   .order('score',{ascending:false})
-   .order('created_at',{ascending:true})
+  const {data,error}=await supabaseClient.from('leaderboard_stats')
+   .select('player_rank,player_name,total_games,personal_best')
+   .order('player_rank',{ascending:true})
    .limit(10);
   if(error)throw error;
   const list=$('leaderboardList');
   list.replaceChildren();
   if(!data||data.length===0){
-   list.innerHTML='<div class="lb-empty">No scores yet. Be the first player!</div>';
+   list.innerHTML='<div class="lb-empty">No players yet. Be the first!</div>';
    return;
   }
-  data.forEach((item,index)=>{
+  data.forEach(item=>{
    const row=document.createElement('div');row.className='lb-row';
-   const rank=document.createElement('span');rank.className='lb-rank';rank.textContent='#'+(index+1);
-   const name=document.createElement('span');name.className='lb-name';name.textContent=item.player_name;
-   const points=document.createElement('span');points.className='lb-score';points.textContent=item.score;
-   row.append(rank,name,points);list.appendChild(row);
+   const rank=document.createElement('span');rank.className='lb-rank';rank.textContent='#'+item.player_rank;
+   const name=document.createElement('span');name.className='lb-name';name.textContent=item.player_name||'Player';
+   const games=document.createElement('span');games.className='lb-stat';
+   const gamesLabel=document.createElement('small');gamesLabel.textContent='GAMES';
+   const gamesValue=document.createElement('strong');gamesValue.textContent=item.total_games;
+   games.append(gamesLabel,gamesValue);
+   const best=document.createElement('span');best.className='lb-stat';
+   const bestLabel=document.createElement('small');bestLabel.textContent='BEST';
+   const bestValue=document.createElement('strong');bestValue.textContent=item.personal_best;
+   best.append(bestLabel,bestValue);
+   row.append(rank,name,games,best);list.appendChild(row);
   });
  }catch(error){
   console.error('Leaderboard load error:',error);
-  $('leaderboardList').innerHTML='<div class="lb-empty">Could not load scores. Please refresh.</div>';
+  $('leaderboardList').innerHTML='<div class="lb-empty">Could not load rankings. Check the leaderboard_stats view permissions and refresh.</div>';
  }
 }
 $('submitScoreBtn').addEventListener('click',async()=>{
