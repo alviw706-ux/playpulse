@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#090b18">
-<meta name="description" content="NEON DASH — a fast, original one-tap arcade challenge.">
-<title>NEON DASH — One Tap. Keep Moving.</title>
+<meta name="description" content="PLAYPULSE — Play NEON DASH and NEON ORBIT. Two arcade games, endless challenges.">
+<title>PLAYPULSE — Neon Arcade Games</title>
 <style>
 :root{--bg:#090b18;--panel:#12172a;--cyan:#61f4e8;--pink:#ff5eaa;--yellow:#ffe66d;--muted:#9aa6c8}
 *{box-sizing:border-box}
@@ -13,6 +13,28 @@ html,body{margin:0;min-height:100%;background:radial-gradient(ellipse at 50% 0%,
 body{display:flex;justify-content:center;align-items:center;padding:16px;overflow-x:hidden}
 button,input{font:inherit}
 .app{width:min(100%,430px);margin:auto}
+
+/* PLAYPULSE GAME HUB */
+.game-hub{margin-bottom:16px;padding:17px;background:linear-gradient(135deg,#151d3b,#12172a);border:1px solid #61f4e855;border-radius:20px;box-shadow:0 0 25px #61f4e811}
+.hub-heading{text-align:center;margin-bottom:15px}
+.hub-brand{font-size:25px;font-weight:1000;letter-spacing:3px;color:var(--cyan)}
+.hub-tagline{font-size:10px;letter-spacing:3px;color:var(--muted);margin-top:4px}
+.hub-games{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.hub-card{text-decoration:none;text-align:center;padding:17px 7px;border-radius:14px;display:block;transition:transform .2s,box-shadow .2s}
+.hub-card:active{transform:scale(.97)}
+.hub-card.dash{background:#61f4e817;border:1px solid #61f4e866;color:white}
+.hub-card.orbit{background:#ff5eaa12;border:1px solid #ff5eaa66;color:white}
+.hub-icon{font-size:29px}
+.hub-game-name{font-size:14px;font-weight:1000;margin-top:7px}
+.dash .hub-game-name{color:var(--cyan)}
+.orbit .hub-game-name{color:var(--pink)}
+.hub-description{font-size:10px;color:var(--muted);margin-top:5px}
+.hub-play{font-size:10px;padding:6px;border-radius:8px;margin-top:12px;font-weight:900}
+.dash .hub-play{background:var(--cyan);color:#07131c}
+.orbit .hub-play{background:var(--pink);color:#090b18}
+.hub-footer{text-align:center;color:#7783a8;font-size:9px;letter-spacing:2px;margin-top:13px}
+/* END PLAYPULSE GAME HUB */
+
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .brand{font-size:clamp(23px,6vw,32px);font-weight:1000;letter-spacing:.09em;text-shadow:0 0 18px #61f4e866}
 .brand span{color:var(--cyan)}
@@ -74,6 +96,31 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
 </head>
 <body>
 <main class="app">
+
+  <!-- PLAYPULSE GAME HUB -->
+  <section class="game-hub" aria-label="Choose a game">
+    <div class="hub-heading">
+      <div class="hub-brand">PLAYPULSE</div>
+      <div class="hub-tagline">YOUR ARCADE. YOUR CHALLENGE.</div>
+    </div>
+    <div class="hub-games">
+      <a class="hub-card dash" href="#neon-dash-game">
+        <div class="hub-icon">⚡</div>
+        <div class="hub-game-name">NEON DASH</div>
+        <div class="hub-description">ONE TAP SURVIVAL</div>
+        <div class="hub-play">PLAY NOW</div>
+      </a>
+      <a class="hub-card orbit" href="https://neon-orbit-lac.vercel.app/" target="_blank" rel="noopener noreferrer">
+        <div class="hub-icon">🌌</div>
+        <div class="hub-game-name">NEON ORBIT</div>
+        <div class="hub-description">ENDLESS SURVIVAL</div>
+        <div class="hub-play">PLAY NOW ↗</div>
+      </a>
+    </div>
+    <div class="hub-footer">2 GAMES · INFINITE CHALLENGES</div>
+  </section>
+  <!-- END PLAYPULSE GAME HUB -->
+
   <header class="top">
     <div><div class="brand">NEON<span>DASH</span></div><div class="tag">ONE TAP. KEEP MOVING.</div></div>
     <button class="iconbtn" id="soundBtn" aria-label="Toggle sound">🔊 SOUND</button>
@@ -83,7 +130,7 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
     <div class="stat"><small>BEST</small><strong id="best">0</strong></div>
     <div class="stat"><small>STREAK</small><strong id="streak">0×</strong></div>
   </section>
-  <section class="gamewrap">
+  <section class="gamewrap" id="neon-dash-game">
     <canvas id="game" width="480" height="650" aria-label="Neon Dash game area"></canvas>
     <div class="overlay" id="overlay">
       <div class="dialog">
