@@ -35,6 +35,17 @@ button,input{font:inherit}
 .hub-footer{text-align:center;color:#7783a8;font-size:9px;letter-spacing:2px;margin-top:13px}
 /* END PLAYPULSE GAME HUB */
 
+/* NEON DASH GAME SCREEN */
+.dash-screen{display:none}
+.dash-screen.active{display:block}
+.back-home{
+  width:100%;margin:0 0 12px;padding:12px;
+  border:1px solid #61f4e866;border-radius:12px;
+  background:#61f4e817;color:var(--cyan);
+  font-weight:900;cursor:pointer
+}
+/* END NEON DASH GAME SCREEN */
+
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .brand{font-size:clamp(23px,6vw,32px);font-weight:1000;letter-spacing:.09em;text-shadow:0 0 18px #61f4e866}
 .brand span{color:var(--cyan)}
@@ -104,7 +115,7 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
       <div class="hub-tagline">YOUR ARCADE. YOUR CHALLENGE.</div>
     </div>
     <div class="hub-games">
-      <a class="hub-card dash" href="#neon-dash-game">
+      <a class="hub-card dash" href="#neon-dash-game" id="openDash">
         <div class="hub-icon">⚡</div>
         <div class="hub-game-name">NEON DASH</div>
         <div class="hub-description">ONE TAP SURVIVAL</div>
@@ -121,74 +132,97 @@ h1{font-size:clamp(34px,9vw,50px);line-height:.98;margin:12px 0;text-shadow:0 0 
   </section>
   <!-- END PLAYPULSE GAME HUB -->
 
-  <header class="top">
-    <div><div class="brand">NEON<span>DASH</span></div><div class="tag">ONE TAP. KEEP MOVING.</div></div>
-    <button class="iconbtn" id="soundBtn" aria-label="Toggle sound">🔊 SOUND</button>
-  </header>
-  <section class="hud" aria-label="Game statistics">
-    <div class="stat"><small>SCORE</small><strong id="score">0</strong></div>
-    <div class="stat"><small>BEST</small><strong id="best">0</strong></div>
-    <div class="stat"><small>STREAK</small><strong id="streak">0×</strong></div>
-  </section>
-  <section class="gamewrap" id="neon-dash-game">
-    <canvas id="game" width="480" height="650" aria-label="Neon Dash game area"></canvas>
-    <div class="overlay" id="overlay">
-      <div class="dialog">
-        <div class="eyebrow" id="overlayEyebrow">A QUICK ARCADE CHALLENGE</div>
-        <h1 id="overlayTitle">READY<br>TO DASH?</h1>
-        <p id="overlayText">Tap anywhere to switch lanes. Dodge the pulse blocks, collect the glowing sparks, and see how long you can last.</p>
-        <button class="primary" id="startBtn">START GAME</button>
-        <button class="secondary" id="shareBtn">SHARE YOUR SCORE</button>
+  <div id="dash-screen" class="dash-screen">
+    <button class="back-home" id="backHome" type="button">← BACK TO GAME SELECT</button>
+
+    <header class="top">
+      <div><div class="brand">NEON<span>DASH</span></div><div class="tag">ONE TAP. KEEP MOVING.</div></div>
+      <button class="iconbtn" id="soundBtn" aria-label="Toggle sound">🔊 SOUND</button>
+    </header>
+
+    <section class="hud" aria-label="Game statistics">
+      <div class="stat"><small>SCORE</small><strong id="score">0</strong></div>
+      <div class="stat"><small>BEST</small><strong id="best">0</strong></div>
+      <div class="stat"><small>STREAK</small><strong id="streak">0×</strong></div>
+    </section>
+
+    <section class="gamewrap" id="neon-dash-game">
+      <canvas id="game" width="480" height="650" aria-label="Neon Dash game area"></canvas>
+      <div class="overlay" id="overlay">
+        <div class="dialog">
+          <div class="eyebrow" id="overlayEyebrow">A QUICK ARCADE CHALLENGE</div>
+          <h1 id="overlayTitle">READY<br>TO DASH?</h1>
+          <p id="overlayText">Tap anywhere to switch lanes. Dodge the pulse blocks, collect the glowing sparks, and see how long you can last.</p>
+          <button class="primary" id="startBtn">START GAME</button>
+          <button class="secondary" id="shareBtn">SHARE YOUR SCORE</button>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="leaderboard">
-    <div class="lb-head"><div class="lb-title">🏆 PLAYER RANKINGS</div><div class="lb-status" id="lbStatus">Connecting…</div></div>
-    <div class="lb-form">
-      <input id="playerName" maxlength="16" placeholder="Your player name" autocomplete="nickname">
-      <button id="submitScoreBtn">SUBMIT SCORE</button>
-    </div>
-    <div class="lb-columns"><span>RANK</span><span>PLAYER</span><span>GAMES</span><span>BEST</span></div>
-    <div class="lb-list" id="leaderboardList"><div class="lb-empty">Loading player rankings…</div></div>
-    <div class="lb-note">Play a run, enter your name, and submit your score. Rankings show each player's total games and personal best.</div>
-  </section>
+    <section class="leaderboard">
+      <div class="lb-head"><div class="lb-title">🏆 PLAYER RANKINGS</div><div class="lb-status" id="lbStatus">Connecting…</div></div>
+      <div class="lb-form">
+        <input id="playerName" maxlength="16" placeholder="Your player name" autocomplete="nickname">
+        <button id="submitScoreBtn">SUBMIT SCORE</button>
+      </div>
+      <div class="lb-columns"><span>RANK</span><span>PLAYER</span><span>GAMES</span><span>BEST</span></div>
+      <div class="lb-list" id="leaderboardList"><div class="lb-empty">Loading player rankings…</div></div>
+      <div class="lb-note">Play a run, enter your name, and submit your score. Rankings show each player's total games and personal best.</div>
+    </section>
 
-  <section class="profile" aria-label="My player profile">
-    <div class="profile-head"><div class="profile-title">👤 MY PLAYER PROFILE</div><div class="profile-status" id="profileStatus">Loading…</div></div>
-    <div class="profile-identity"><div class="profile-avatar" id="profileAvatar">🚀</div><div class="profile-name" id="profileName">Guest Player</div></div>
-    <div class="avatar-label">CHOOSE YOUR AVATAR</div>
-    <div class="avatar-picker" id="avatarPicker" aria-label="Choose your player avatar">
-      <button class="avatar-choice" type="button" data-avatar="🚀" aria-label="Rocket avatar">🚀</button>
-      <button class="avatar-choice" type="button" data-avatar="🦊" aria-label="Fox avatar">🦊</button>
-      <button class="avatar-choice" type="button" data-avatar="🐉" aria-label="Dragon avatar">🐉</button>
-      <button class="avatar-choice" type="button" data-avatar="🤖" aria-label="Robot avatar">🤖</button>
-      <button class="avatar-choice" type="button" data-avatar="👾" aria-label="Alien avatar">👾</button>
-      <button class="avatar-choice" type="button" data-avatar="⚡" aria-label="Lightning avatar">⚡</button>
-      <button class="avatar-choice" type="button" data-avatar="🐼" aria-label="Panda avatar">🐼</button>
-      <button class="avatar-choice" type="button" data-avatar="🦁" aria-label="Lion avatar">🦁</button>
-    </div>
-    <button class="save-profile" id="saveProfileBtn" type="button">SAVE MY PROFILE</button>
-    <div class="profile-grid">
-      <div class="profile-stat"><small>GLOBAL RANK</small><strong id="profileRank">—</strong></div>
-      <div class="profile-stat"><small>TOTAL GAMES</small><strong id="profileGames">0</strong></div>
-      <div class="profile-stat"><small>PERSONAL BEST</small><strong id="profileBest">0</strong></div>
-    </div>
-    <div class="profile-note" id="profileNote">Submit your first score to build your player profile.</div>
-  </section>
+    <section class="profile" aria-label="My player profile">
+      <div class="profile-head"><div class="profile-title">👤 MY PLAYER PROFILE</div><div class="profile-status" id="profileStatus">Loading…</div></div>
+      <div class="profile-identity"><div class="profile-avatar" id="profileAvatar">🚀</div><div class="profile-name" id="profileName">Guest Player</div></div>
+      <div class="avatar-label">CHOOSE YOUR AVATAR</div>
+      <div class="avatar-picker" id="avatarPicker" aria-label="Choose your player avatar">
+        <button class="avatar-choice" type="button" data-avatar="🚀" aria-label="Rocket avatar">🚀</button>
+        <button class="avatar-choice" type="button" data-avatar="🦊" aria-label="Fox avatar">🦊</button>
+        <button class="avatar-choice" type="button" data-avatar="🐉" aria-label="Dragon avatar">🐉</button>
+        <button class="avatar-choice" type="button" data-avatar="🤖" aria-label="Robot avatar">🤖</button>
+        <button class="avatar-choice" type="button" data-avatar="👾" aria-label="Alien avatar">👾</button>
+        <button class="avatar-choice" type="button" data-avatar="⚡" aria-label="Lightning avatar">⚡</button>
+        <button class="avatar-choice" type="button" data-avatar="🐼" aria-label="Panda avatar">🐼</button>
+        <button class="avatar-choice" type="button" data-avatar="🦁" aria-label="Lion avatar">🦁</button>
+      </div>
+      <button class="save-profile" id="saveProfileBtn" type="button">SAVE MY PROFILE</button>
+      <div class="profile-grid">
+        <div class="profile-stat"><small>GLOBAL RANK</small><strong id="profileRank">—</strong></div>
+        <div class="profile-stat"><small>TOTAL GAMES</small><strong id="profileGames">0</strong></div>
+        <div class="profile-stat"><small>PERSONAL BEST</small><strong id="profileBest">0</strong></div>
+      </div>
+      <div class="profile-note" id="profileNote">Submit your first score to build your player profile.</div>
+    </section>
 
-  <div class="controls">
-    <button class="iconbtn" id="pauseBtn">Ⅱ PAUSE</button>
-    <button class="iconbtn" id="howBtn">? HOW TO PLAY</button>
+    <div class="controls">
+      <button class="iconbtn" id="pauseBtn">Ⅱ PAUSE</button>
+      <button class="iconbtn" id="howBtn">? HOW TO PLAY</button>
+    </div>
+    <p class="hint">TAP / CLICK / PRESS SPACE TO SWITCH LANES</p>
+    <div class="footer">ORIGINAL MINI GAME · MADE FOR QUICK REPLAYS</div>
   </div>
-  <p class="hint">TAP / CLICK / PRESS SPACE TO SWITCH LANES</p>
-  <div class="footer">ORIGINAL MINI GAME · MADE FOR QUICK REPLAYS</div>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=>{
 'use strict';
+
+/* PLAYPULSE GAME SELECTOR */
+const hub=document.querySelector('.game-hub');
+const dashScreen=document.getElementById('dash-screen');
+
+document.getElementById('openDash').addEventListener('click',e=>{
+ e.preventDefault();
+ hub.style.display='none';
+ dashScreen.classList.add('active');
+ window.scrollTo({top:0,behavior:'smooth'});
+});
+
+document.getElementById('backHome').addEventListener('click',()=>{
+ dashScreen.classList.remove('active');
+ hub.style.display='block';
+ window.scrollTo({top:0,behavior:'smooth'});
+});
 
 /* Supabase public project settings */
 const SUPABASE_URL='https://mdooihdfejjnacxlbzpw.supabase.co';
